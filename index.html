@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#22484a">
+<title>钱塘江观潮 · 我的观潮计划</title>
+<meta name="description" content="回答三个问题，给你一个确定的观潮方案：哪天、去哪、几点出发、带什么、别做什么。">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<!-- 弱网提示 -->
+<div class="offline-badge" id="offlineBadge" hidden>当前离线 · 页面数据已内置，仍可使用</div>
+
+<!-- 顶部 -->
+<header class="topbar">
+  <div class="wrap">
+    <h1>钱塘江观潮 · 我的观潮计划</h1>
+    <div class="sub" id="topSub">先回答三个问题，再给你一个确定的方案</div>
+    <span class="dataversion" id="dataVersion">潮汐数据更新至 —</span>
+  </div>
+</header>
+
+<!-- L2 常驻安全条：不可关闭 -->
+<div class="safety-bar" id="l2bar">
+  ⚠ 观潮有生命危险 · 站护栏内 · 不翻越挡墙 · 不下江滩丁坝
+</div>
+
+<main class="wrap">
+
+  <!-- L5 现场级实时提示（潮前 20 分钟起自动出现） -->
+  <div class="live-panel" id="live" hidden role="alert" aria-live="assertive"></div>
+
+  <!-- 数据过期提示条（P0-02：过期时统一降级，停止显示具体潮时）-->
+  <div class="stale-bar" id="staleBar" hidden></div>
+
+  <!-- ============================================================
+       视图 A · 提问向导（未答完前不展示任何方案）
+       ============================================================ -->
+  <section id="view-ask" aria-label="观潮计划设置">
+
+    <!-- 进度 -->
+    <div class="ask-progress" id="askProgress">
+      <div class="ask-steps" id="askSteps"></div>
+      <div class="ask-bar"><i id="askBarFill"></i></div>
+    </div>
+
+    <!-- 单一问题面板（内容由 app.js 按 step 渲染） -->
+    <div id="askPanel"></div>
+
+    <!-- 回退 / 稍后再说 -->
+    <div class="ask-foot" id="askFoot"></div>
+
+  </section>
+
+  <!-- ============================================================
+       视图 B · 方案页（只给结论 + 按需展开的资料）
+       ============================================================ -->
+  <section id="view-plan" aria-label="我的观潮方案" hidden>
+
+    <!-- 你的答案（可一键回改） -->
+    <div class="answers-bar" id="answersBar"></div>
+
+    <!-- 主方案 -->
+    <div id="planMain"></div>
+
+    <!-- 次优选项 / 野生点位分支 -->
+    <div id="planAlt"></div>
+
+    <!-- 分享 -->
+    <div class="card" id="planShare">
+      <h2 class="card-title"><span>分享给同行人</span></h2>
+      <div class="small" style="margin-bottom:12px">
+        生成一张<b>竖版长图</b>，含点位、潮时、出发时间、交通、清单、安全须知、免责声明。
+        发微信直接看图 —— 对方不用点链接、不用登录，<b>断网也能看</b>。
+      </div>
+      <div class="poster-actions">
+        <button class="btn btn-primary" id="btnPoster">生成观潮长图</button>
+        <button class="btn btn-outline" id="btnCopy">复制计划文案</button>
+      </div>
+      <div class="poster-preview" id="posterPreview" hidden></div>
+    </div>
+
+    <!-- 参考资料：默认全部折叠，按需展开 -->
+    <div class="refs-head">
+      <h2 class="refs-title">行前准备 · 参考资料</h2>
+      <div class="small">下面是完整的避雷、清单、安全与日历。不急着看，出门前扫一遍就够。</div>
+    </div>
+
+    <!-- 1. 行前准备清单 -->
+    <details class="ref" id="ref-checklist">
+      <summary><span>行前准备清单</span><span class="ref-meta" id="refChecklistMeta"></span></summary>
+      <div class="ref-body">
+        <div class="small" style="margin-bottom:12px">按「出发前 N 小时」分组。<span style="color:var(--danger);font-weight:600">红底项是刚性卡口</span>——不办就进不去。</div>
+        <div id="checklist"></div>
+      </div>
+    </details>
+
+    <!-- 2. 避雷清单 -->
+    <details class="ref" id="ref-pitfalls">
+      <summary><span>避雷清单</span><span class="badge p0">P0</span></summary>
+      <div class="ref-body">
+        <div id="pitfalls"></div>
+      </div>
+    </details>
+
+    <!-- 3. 安全须知 -->
+    <details class="ref" id="ref-safety">
+      <summary><span>安全须知</span><span class="badge p0">P0</span></summary>
+      <div class="ref-body">
+        <div id="safety"></div>
+      </div>
+    </details>
+
+    <!-- 4. 大潮日历 -->
+    <details class="ref" id="ref-calendar">
+      <summary><span>大潮日历</span><span class="badge p1">P1</span></summary>
+      <div class="ref-body">
+        <div id="calendar"></div>
+      </div>
+    </details>
+
+    <!-- 5. 野生观潮点（完整清单，主流程里只给入口） -->
+    <details class="ref" id="ref-wild">
+      <summary><span>野生观潮点（免费 / 小众 / 风险高一档）</span><span class="badge p1">P1</span></summary>
+      <div class="ref-body">
+        <div id="wild"></div>
+      </div>
+    </details>
+
+    <!-- 6. 官方数据与校正 -->
+    <details class="ref" id="ref-official">
+      <summary><span>查官方潮汐数据 / 手动校正</span></summary>
+      <div class="ref-body">
+        <div id="official"></div>
+        <div id="correction"></div>
+      </div>
+    </details>
+
+  </section>
+
+  <!-- 页脚免责声明 -->
+  <footer class="footer">
+    <details>
+      <summary>免责声明（点击展开完整版）</summary>
+      <ol id="footerDisclaimer"></ol>
+    </details>
+    <div class="src">
+      数据口径：潮时、等级、接驳、限行、事故案例等信息来自 2026 年公开报道与官方发布口径，
+      具体数值以出行当日的官方潮汐预报为准。<br>
+      事故案例（2023-10-01 盐官护栏冲倒、2019-03-26 大缺口遇难等）来自公开报道；
+      八处历史危险点来自警方与媒体公开口径；涌潮速度（每秒 5–10 米）来自水利与媒体报道口径。<br>
+      本页为个人整理的信息汇总，不指向任何具体商家，不构成出行建议。
+    </div>
+  </footer>
+
+</main>
+
+<!-- 底部固定动作条（内容随视图变化） -->
+<div class="bottom-bar" id="bottomBar"></div>
+
+<!-- L1 安全确认：已合并进提问向导第 1 步，此遮罩仅保留给「野生点位」L4 复用 -->
+<div class="overlay" id="wildOverlay" hidden>
+  <div class="disclaimer-box" id="wildDisclaimerBody"></div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- 隐藏的海报渲染容器（供 html2canvas 使用） -->
+<div id="posterStage" aria-hidden="true"></div>
+
+<!-- 脚本 -->
+<script src="lib/tide-data.js"></script>
+<script src="lib/countdown.js"></script>
+<script src="lib/drive.js"></script>
+<script src="lib/html2canvas.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

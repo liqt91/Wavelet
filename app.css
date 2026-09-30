@@ -1,0 +1,953 @@
+/* ============================================================
+ * app.css — 观潮攻略 样式系统
+ *
+ * 视觉语言：江南水墨 · 人文
+ *   - 宣纸底、墨色字、黛青主色（潮水的青绿灰调）
+ *   - 朱砂红只用于安全警示，其他位置一律不用红
+ *   - 标题用宋体/明朝体，正文用系统黑体，数字用等宽表格数字
+ *
+ * 设计约束（见 4.6 无障碍与弱网）：
+ *   - 大字、高对比（现场强光下屏幕发白）
+ *   - 关键信息不依赖折叠（安全提示、潮时、导航按钮）
+ *   - 移动优先，单手可操作
+ *   - 浅色主题（明亮环境下可读性优先）
+ * ============================================================ */
+
+:root {
+  /* 纸与墨 */
+  --bg: #f6f3ec;            /* 宣纸 */
+  --surface: #fdfcf7;
+  --surface-2: #eee9dc;
+  --border: #ddd6c4;
+  --line: #cfc8b4;
+  --line-strong: #b9b2a0;
+  --text: #252a2d;          /* 墨 */
+  --text-2: #4c5450;
+  --text-3: #5f6661;        /* 在宣纸底上 ≥4.5:1 */
+
+  /* 黛青 —— 主色（交互、选中、强调） */
+  --ink: #2e5e5a;
+  --ink-deep: #22484a;
+  --ink-bg: #e7eeea;
+  --ink-border: #b3c8c0;
+
+  /* 朱砂 —— 仅安全警示 */
+  --danger: #b03a2a;
+  --danger-bg: #f9ebe6;
+  --danger-border: #e2b3a5;
+  --danger-text: #8f2b1e;
+
+  /* 赭石 —— 警告 / 数据过期 */
+  --warn: #8a5a12;
+  --warn-bg: #faf2dd;
+  --warn-border: #e2c889;
+  --warn-text: #6b4a10;
+
+  /* 竹青 —— 安全 / 完成 */
+  --safe: #3f7350;
+  --safe-bg: #e9f1e6;
+  --safe-border: #aec9a4;
+  --safe-text: #2c5238;
+
+  /* info 收敛进黛青，不再单独一套蓝 */
+  --info: var(--ink);
+  --info-bg: var(--ink-bg);
+  --info-border: var(--ink-border);
+
+  /* 潮势等级色（潮水本色：钱塘江含沙，潮越大汤越浓） */
+  --lv5: #7a4a16;
+  --lv4: #a06a24;
+  --lv3: #c19a4a;
+  --lv2: #d4bf90;
+  --lv1: #e6dcc2;
+
+  --radius: 10px;
+  --radius-sm: 7px;
+  --shadow: 0 1px 2px rgba(52,46,30,.05), 0 2px 10px rgba(52,46,30,.05);
+  --shadow-lg: 0 8px 28px rgba(52,46,30,.12);
+
+  --serif: "Songti SC", "STSong", "Noto Serif SC", "Noto Serif CJK SC",
+           "Source Han Serif SC", "SimSun", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB",
+          "Microsoft YaHei", "Segoe UI", Roboto, sans-serif;
+
+  --maxw: 720px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+body { padding-bottom: 108px; }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 14px; }
+
+/* ---------- 顶部标题（黛青水墨 + 潮线收口） ---------- */
+.topbar {
+  background:
+    radial-gradient(120% 140% at -10% 120%, rgba(0,0,0,.22), transparent 55%),
+    radial-gradient(130% 100% at 88% -20%, rgba(255,255,255,.12), transparent 52%),
+    linear-gradient(165deg, #2e5e5a 0%, #22484a 100%);
+  color: #fff;
+  padding: 20px 0 0;
+}
+.topbar .wrap { padding-bottom: 18px; }
+.topbar h1 {
+  margin: 0 0 5px;
+  font-family: var(--serif);
+  font-size: 23px; font-weight: 700; letter-spacing: 1px;
+}
+.topbar .sub { font-size: 13px; opacity: .85; }
+.topbar .dataversion {
+  display: inline-block; margin-top: 10px; font-size: 11.5px;
+  background: rgba(255,255,255,.14); padding: 3px 10px; border-radius: 20px;
+}
+.topbar .dataversion.stale { background: rgba(176,58,42,.9); }
+/* 潮线：用宣纸色的连续波口把顶栏收进正文 */
+.topbar::after {
+  content: ""; display: block; height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='12' viewBox='0 0 48 12'%3E%3Cpath d='M0 12 L0 7 Q12 0 24 7 T48 7 L48 12 Z' fill='%23f6f3ec'/%3E%3C/svg%3E") repeat-x bottom;
+  background-size: 48px 12px;
+}
+
+/* ---------- L2 常驻安全条（不可关闭）—— 全站唯一的常驻红 ---------- */
+.safety-bar {
+  background: var(--danger);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 9px 14px;
+  letter-spacing: .2px;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+/* ---------- 筛选 chip（可换行、44px 高、toggle 选中态） ---------- */
+.chip-row { display: flex; flex-wrap: wrap; gap: 9px; }
+.chip {
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text);
+  border-radius: 22px; padding: 10px 16px; min-height: 44px;
+  font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: background .12s, border-color .12s;
+  white-space: nowrap;
+}
+.chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* ---------- 日期按钮（44px 高、带星期与相对日标记） ---------- */
+.date-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; min-width: 72px; min-height: 48px; padding: 6px 10px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); font-family: inherit; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.date-btn b { font-size: 14.5px; font-variant-numeric: tabular-nums; }
+.date-btn span { font-size: 11px; color: var(--text-2); }
+.date-btn.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.date-btn.on span { color: rgba(255,255,255,.88); }
+
+/* ---------- 出发地选择（P0-01：车程由此决定） ---------- */
+.origin-block {
+  margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line);
+}
+.origin-label {
+  display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 7px;
+}
+.origin-select {
+  width: 100%; min-height: 44px; padding: 10px 12px;
+  font-family: inherit; font-size: 15px; color: var(--text);
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.origin-select:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.origin-note {
+  margin-top: 9px; font-size: 12.5px; line-height: 1.65; color: var(--text-2);
+}
+.origin-note b { color: var(--text); font-size: 14px; }
+/* 行内文字按钮 —— 视觉上是链接，但点击目标必须够大。
+   用负 margin 把内边距"抵消"掉，既不撑开行高，又能满足 44px 触达（审计项：中）。 */
+.link-btn {
+  background: none; border: none; margin: -14px -10px;
+  padding: 14px 10px;
+  display: inline-block; min-height: 44px;
+  font-family: inherit; font-size: 12.5px; font-weight: 600; line-height: 16px;
+  color: var(--ink); text-decoration: underline; cursor: pointer;
+  vertical-align: middle;
+}
+.link-btn:hover { opacity: .8; }
+
+/* 车程来源标签：提醒用户这是估算/预设值，不是实时路况 */
+.drive-tag {
+  display: inline-block; margin-left: 4px; padding: 0 5px;
+  font-size: 10.5px; font-weight: 600; line-height: 16px; vertical-align: 1px;
+  color: var(--warn-text); background: var(--warn-bg); border: 1px solid var(--warn-border); border-radius: 4px;
+}
+
+/* ---------- 数据过期提示条（P0-02） ---------- */
+.stale-bar {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  color: var(--warn-text); font-size: 13px; line-height: 1.72;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  margin: 12px 0;
+}
+.stale-bar b { color: var(--warn); }
+
+/* 过期态：区块内说明 + 中性化处理（P0-02）
+   原则：过期数据不是"隐藏"，而是"降级"——保留可用的结构与信息，
+   抹掉会让人按错误时间行动的具体数字。 */
+.stale-note {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  color: var(--warn-text); font-size: 12.5px; line-height: 1.72;
+  padding: 11px 13px; border-radius: var(--radius-sm);
+  margin: 10px 0;
+}
+.stale-note b { color: var(--warn); }
+
+/* 「窗口间隙」说明已并入日历下方图例（日历连续展示后不再需要单独解释跳段） */
+
+/* 日历/日期按钮：过期时去色，避免"星标"被误读为可用评价 */
+.cal-cell.is-stale, .date-btn.is-stale {
+  background: var(--surface-2) !important;
+  color: var(--text-3) !important;
+  border-color: var(--line) !important;
+}
+.cal-cell.is-stale { cursor: default; }
+.cal-grid-stale .cal-cell { min-height: 46px; }
+
+/* 过期点位卡：压掉风险色，避免"红=高危"与"数据过期"混淆 */
+.point-card.is-stale { border-color: var(--line-strong); }
+.point-card.is-stale .point-time { color: var(--text-3); }
+
+/* ---------- 通用卡片 ---------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 16px;
+  margin: 14px 0;
+}
+.card-title {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  display: flex; align-items: center; gap: 7px;
+}
+/* 优先级徽标：描边样式，不抢视觉（内部排期标记降级为辅助信息） */
+.card-title .badge {
+  font-family: var(--sans);
+  font-size: 10.5px; font-weight: 600; padding: 2px 7px; border-radius: 20px;
+  background: transparent; color: var(--ink); border: 1px solid var(--ink-border);
+  letter-spacing: .3px;
+}
+.card-title .badge.p0 { color: var(--danger-text); border-color: var(--danger-border); }
+.card-title .badge.p1 { color: var(--warn-text); border-color: var(--warn-border); }
+
+/* ---------- 首屏状态卡 M1 ---------- */
+.hero {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  margin: 14px 0;
+  overflow: hidden;
+}
+.hero-head {
+  padding: 13px 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  font-size: 13.5px;
+}
+.hero-head .date { font-weight: 700; }
+.hero-head .lunar { color: var(--text-2); font-size: 12.5px; }
+.hero-body { padding: 18px 16px 16px; }
+.hero-phase {
+  font-size: 12.5px; font-weight: 700; letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+.hero-count {
+  font-size: 44px; font-weight: 800; line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+.hero-count .unit { font-size: 17px; font-weight: 600; }
+.hero-meta {
+  margin-top: 12px; font-size: 14px; color: var(--text-2);
+  display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center;
+}
+.hero-meta strong { color: var(--text); font-size: 15px; }
+.hero-advice {
+  margin-top: 14px; padding: 11px 13px; border-radius: var(--radius-sm);
+  font-size: 13.5px; line-height: 1.55;
+}
+.hero-advice.warn { background: var(--warn-bg); border: 1px solid var(--warn-border); color: var(--warn-text); }
+.hero-advice.danger { background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger-text); }
+.hero-advice.safe { background: var(--safe-bg); border: 1px solid var(--safe-border); color: var(--safe-text); }
+.hero-advice.info { background: var(--ink-bg); border: 1px solid var(--ink-border); color: var(--ink-deep); }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: none; border-radius: var(--radius-sm); cursor: pointer;
+  font-size: 15px; font-weight: 600; font-family: inherit;
+  padding: 12px 18px; transition: opacity .15s, transform .08s, background .15s;
+  text-decoration: none;
+}
+.btn:active { transform: scale(.985); }
+.btn-primary { background: var(--ink); color: #fff; }
+.btn-primary:hover { background: var(--ink-deep); }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-outline { background: transparent; color: var(--ink); border: 1.5px solid var(--ink-border); }
+.btn-outline:hover { background: var(--ink-bg); }
+.btn-ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+.btn-block { width: 100%; }
+.btn-lg { padding: 15px 20px; font-size: 16.5px; }
+/* 禁用态用中性灰 —— "没解锁"而不是"坏了" */
+.btn:disabled {
+  background: var(--surface-2); color: var(--text-3);
+  border: 1px solid var(--border);
+  opacity: 1; cursor: not-allowed;
+}
+.btn-row { display: flex; gap: 10px; margin-top: 14px; }
+.btn-row .btn { flex: 1; }
+
+/* ---------- 潮势星级 ---------- */
+.stars { letter-spacing: 1.5px; font-size: 14px; }
+.stars .on { color: var(--lv4); }
+.stars .off { color: var(--lv1); }
+
+/* ---------- 预期管理卡 M10b ---------- */
+.expect-card {
+  background: linear-gradient(140deg, #faf4e2 0%, #f3e9cd 100%);
+  border: 1px solid #e6d9b2;
+}
+.expect-card .card-title { color: #6b5334; }
+.expect-item { margin: 12px 0; padding-left: 30px; position: relative; font-size: 14px; line-height: 1.62; }
+.expect-item .num {
+  position: absolute; left: 0; top: 1px;
+  width: 21px; height: 21px; border-radius: 50%;
+  background: #6b5334; color: #fff; font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.expect-item b { color: #4e3b22; }
+
+/* ---------- 点位卡（风险由边框着色 + 标签承担，不再用粗左边条） ---------- */
+.point-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: 12px 0;
+  overflow: hidden;
+}
+.point-card.risk-low { border-color: var(--safe-border); }
+.point-card.risk-mid { border-color: var(--warn-border); }
+.point-card.risk-high { border-color: var(--danger-border); }
+
+.point-head {
+  padding: 14px 15px 10px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+}
+.point-name { font-family: var(--serif); font-size: 17.5px; font-weight: 700; margin: 0 0 3px; }
+.point-types { font-size: 12.5px; color: var(--text-2); }
+.point-right { text-align: right; flex-shrink: 0; }
+.point-time { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--ink); }
+.point-ticket { font-size: 12px; margin-top: 2px; }
+.point-ticket.free { color: var(--safe); font-weight: 600; }
+.point-ticket.paid { color: var(--warn-text); font-weight: 600; }
+
+.point-tags { padding: 0 15px 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.tag {
+  font-size: 11.5px; padding: 3px 9px; border-radius: 20px;
+  background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border);
+}
+.tag.risk-high { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); font-weight: 700; }
+.tag.risk-mid { background: var(--warn-bg); color: var(--warn-text); border-color: var(--warn-border); font-weight: 700; }
+.tag.risk-low { background: var(--safe-bg); color: var(--safe-text); border-color: var(--safe-border); font-weight: 700; }
+.tag.pass { background: var(--danger-bg); color: var(--danger-text); border-color: var(--danger-border); font-weight: 700; }
+
+.point-body { padding: 0 15px 14px; }
+.kv { font-size: 13.5px; line-height: 1.6; margin: 7px 0; }
+.kv .k { color: var(--text-3); display: inline-block; min-width: 62px; font-size: 12.5px; }
+.kv .v { color: var(--text); }
+
+/* 点位级安全提示 L3 */
+.l3-safety {
+  margin: 10px 15px 14px;
+  padding: 10px 12px;
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.58; color: var(--danger-text);
+}
+.l3-safety b { display: block; margin-bottom: 3px; font-size: 12.5px; letter-spacing: .3px; }
+
+.point-actions { display: flex; gap: 8px; padding: 0 15px 15px; }
+.point-actions .btn { flex: 1; font-size: 14px; padding: 10px 12px; min-height: 44px; }
+
+/* ---------- 折叠区 ---------- */
+.fold { border-top: 1px solid var(--border); }
+.fold summary {
+  padding: 11px 15px; cursor: pointer; font-size: 13.5px; font-weight: 600;
+  color: var(--ink); list-style: none; user-select: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.fold summary::-webkit-details-marker { display: none; }
+.fold summary::after { content: '＋'; font-size: 15px; color: var(--text-3); }
+.fold[open] summary::after { content: '－'; }
+.fold .fold-body { padding: 0 15px 14px; font-size: 13.5px; line-height: 1.65; color: var(--text-2); }
+
+/* ---------- 野生点位免责声明（L4，全屏弹层，最强阻断） ---------- */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(24,28,26,.72);
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; overflow-y: auto;
+}
+.overlay[hidden] { display: none; }
+.disclaimer-box {
+  background: var(--surface); border-radius: 14px;
+  max-width: 560px; width: 100%; max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 12px 40px rgba(0,0,0,.3);
+}
+.disclaimer-head {
+  background: var(--danger); color: #fff;
+  padding: 15px 18px; border-radius: 14px 14px 0 0;
+  position: sticky; top: 0;
+}
+.disclaimer-head h3 { margin: 0; font-size: 16.5px; display: flex; gap: 8px; align-items: center; }
+.disclaimer-body { padding: 16px 18px; }
+.disclaimer-body p {
+  font-size: 13.5px; line-height: 1.72; margin: 0 0 12px; color: var(--text);
+}
+.disclaimer-body p b { color: var(--danger); }
+.disclaimer-check {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: var(--danger-bg); border: 1px solid var(--danger-border);
+  border-radius: var(--radius-sm); padding: 13px; margin: 4px 0 14px;
+  cursor: pointer; font-size: 13.5px; line-height: 1.55; font-weight: 600; color: var(--danger-text);
+}
+.disclaimer-check input { width: 20px; height: 20px; margin: 1px 0 0; flex-shrink: 0; accent-color: var(--danger); cursor: pointer; }
+
+/* ---------- 行前清单 M5 ---------- */
+.check-group { margin-bottom: 16px; }
+.check-group:last-child { margin-bottom: 0; }
+.check-group h4 {
+  font-size: 13.5px; margin: 0 0 3px; color: var(--text);
+  display: flex; align-items: center; gap: 7px;
+}
+.check-group .ghint { font-size: 12px; color: var(--text-3); margin: 0 0 9px; }
+.check-item {
+  display: flex; gap: 10px; align-items: center;
+  padding: 11px 11px; min-height: 44px; border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 14px; line-height: 1.5;
+  border: 1px solid transparent;
+  transition: background .12s;
+}
+.check-item:hover { background: var(--surface-2); }
+.check-item input { width: 20px; height: 20px; margin: 0; flex-shrink: 0; accent-color: var(--safe); cursor: pointer; }
+.check-item.critical { background: var(--danger-bg); border-color: var(--danger-border); }
+.check-item.critical .txt { font-weight: 600; color: var(--danger-text); }
+.check-item.done .txt { text-decoration: line-through; color: var(--text-3); }
+.check-progress {
+  height: 7px; background: var(--surface-2); border-radius: 4px; overflow: hidden; margin-bottom: 13px;
+}
+.check-progress i { display: block; height: 100%; background: var(--safe); transition: width .3s; width: 0; }
+.check-summary { font-size: 12.5px; color: var(--text-3); margin-bottom: 10px; }
+
+/* ---------- 大潮日历 M6（色块颜色由 levelColor 内联给出） ---------- */
+.cal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.cal-cell {
+  border-radius: var(--radius-sm); padding: 9px 8px; text-align: center;
+  font-size: 12.5px; line-height: 1.4;
+}
+.cal-cell .d { font-weight: 700; font-size: 13.5px; }
+.cal-cell .t { font-variant-numeric: tabular-nums; opacity: .95; font-size: 12px; }
+.cal-cell .l { font-size: 10.5px; opacity: .92; }
+.cal-window { margin: 14px 0; }
+.cal-window h4 { font-size: 13.5px; margin: 0 0 8px; color: var(--text-2); font-weight: 600; }
+
+/* ---------- 避雷清单 M10 ---------- */
+.pit-cat { margin: 16px 0 4px; }
+.pit-cat h4 {
+  font-size: 13px; color: var(--text-3); font-weight: 700; letter-spacing: 2px;
+  margin: 0 0 9px;
+}
+.pit-item {
+  border-left: 2px solid var(--warn-border);
+  padding: 2px 0 2px 13px; margin-bottom: 16px;
+}
+.pit-item .t { font-size: 14.5px; font-weight: 700; margin-bottom: 5px; color: var(--text); }
+.pit-item .why, .pit-item .how { font-size: 13.2px; line-height: 1.62; margin: 4px 0; }
+.pit-item .why { color: var(--text-2); }
+.pit-item .how { color: var(--safe-text); }
+.pit-item .lbl {
+  display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px;
+  border-radius: 4px; margin-right: 5px; vertical-align: 1px;
+}
+.pit-item .lbl.why { background: var(--surface-2); color: var(--text-3); }
+.pit-item .lbl.how { background: var(--safe-bg); color: var(--safe-text); }
+
+/* 劝退卡 */
+.disc-item {
+  padding: 12px 13px; border-radius: var(--radius-sm);
+  background: var(--surface-2); margin-bottom: 9px;
+  border-left: 2px solid var(--danger);
+}
+.disc-item .t { font-size: 14px; font-weight: 700; margin-bottom: 5px; }
+.disc-item .r { font-size: 13px; color: var(--text-2); line-height: 1.58; margin-bottom: 5px; }
+.disc-item .a { font-size: 13px; color: var(--safe-text); line-height: 1.58; }
+
+/* ---------- 安全体系 M7 展示 ---------- */
+.safety-layer {
+  display: flex; gap: 11px; padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.safety-layer:last-child { border-bottom: none; }
+.safety-layer .lv {
+  flex-shrink: 0; width: 34px; height: 34px; border-radius: 9px;
+  background: var(--danger-bg); color: var(--danger);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12.5px;
+}
+.safety-layer .sd { font-size: 13.2px; line-height: 1.55; }
+.safety-layer .sd b { display: block; font-size: 13.5px; margin-bottom: 2px; }
+.safety-layer .sd span { color: var(--text-2); }
+
+.forbid-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.forbid-list span {
+  font-size: 12px; padding: 4px 10px; border-radius: 20px;
+  background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); font-weight: 600;
+}
+
+/* L5 现场级提示（大字脉冲） */
+.live-panel {
+  background: var(--danger); color: #fff;
+  border-radius: var(--radius); padding: 16px; margin: 12px 0;
+  text-align: center;
+}
+.live-panel[hidden] { display: none; }
+.live-panel .lp-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; animation: pulse 1.6s ease-in-out infinite; }
+.live-panel .lp-sub { font-size: 14px; opacity: .95; line-height: 1.55; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .68; } }
+
+/* ---------- 官方入口 ---------- */
+.official-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 9px; }
+.official-btn {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 13px; cursor: pointer;
+  text-align: left; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink);
+  transition: background .12s;
+}
+.official-btn:hover { background: var(--ink-bg); }
+.official-btn small { display: block; font-size: 11.5px; font-weight: 400; color: var(--text-2); margin-top: 2px; }
+
+/* ---------- 海报导出 M11 ---------- */
+.poster-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.poster-actions .btn { flex: 1; min-width: 150px; }
+.poster-preview {
+  margin-top: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  overflow: hidden; background: var(--surface-2);
+}
+.poster-preview img { display: block; width: 100%; height: auto; }
+.poster-hint { font-size: 12.5px; color: var(--text-3); margin-top: 9px; line-height: 1.55; }
+
+/* 隐藏的海报容器 —— 不参与布局，仅供 canvas 渲染 */
+#posterStage {
+  position: fixed; left: -99999px; top: 0;
+  width: 750px;
+}
+
+/* ---------- 页脚免责 ---------- */
+.footer {
+  margin-top: 22px; padding: 18px 0 8px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-2); line-height: 1.7;
+}
+.footer details summary {
+  cursor: pointer; font-weight: 600; color: var(--text); font-size: 13px;
+  list-style: none; padding: 13px 0; min-height: 44px;
+  display: flex; align-items: center;
+}
+.footer details summary::-webkit-details-marker { display: none; }
+.footer ol { padding-left: 18px; margin: 8px 0 0; }
+.footer li { margin-bottom: 7px; }
+.footer .src { margin-top: 14px; font-size: 11px; color: var(--text-2); line-height: 1.65; }
+
+/* ---------- Toast ---------- */
+#toast {
+  position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(20px);
+  background: rgba(34,72,74,.96); color: #fff; padding: 11px 20px;
+  border-radius: 22px; font-size: 14px; font-weight: 600;
+  z-index: 300; opacity: 0; pointer-events: none; transition: opacity .22s, transform .22s;
+  max-width: 84vw; text-align: center;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- 底部固定动作条（主操作占满，次操作收窄） ---------- */
+.bottom-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+  background: rgba(253,252,247,.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  display: flex; gap: 10px;
+  max-width: var(--maxw); margin: 0 auto;
+}
+.bottom-bar .btn { flex: 1; }
+.bottom-bar .btn-ghost { flex: 0 0 auto; padding-left: 16px; padding-right: 16px; }
+.bottom-bar .btn-ghost:only-child { flex: 1; }
+
+/* ---------- 首屏风险确认（L1） ---------- */
+.l1-body { padding: 16px 18px; }
+.l1-list { margin: 12px 0; }
+.l1-list div {
+  font-size: 13.5px; line-height: 1.6; padding: 7px 0 7px 24px; position: relative; color: var(--text-2);
+}
+.l1-list div::before {
+  content: '•'; position: absolute; left: 8px; color: var(--danger); font-weight: 700;
+}
+
+/* ---------- 空状态 ---------- */
+.empty { text-align: center; padding: 30px 16px; color: var(--text-3); font-size: 14px; }
+
+/* ---------- 工具类 ---------- */
+.mt0 { margin-top: 0; }
+.mb0 { margin-bottom: 0; }
+.tc { text-align: center; }
+.small { font-size: 12.5px; color: var(--text-3); line-height: 1.6; }
+.hl { background: #f5e6a8; padding: 1px 3px; border-radius: 3px; font-weight: 600; }
+.mono { font-variant-numeric: tabular-nums; }
+
+/* ---------- 弱网/离线提示 ---------- */
+.offline-badge {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 150;
+  background: var(--warn); color: #fff; text-align: center;
+  font-size: 12.5px; font-weight: 600; padding: 5px;
+}
+.offline-badge[hidden] { display: none; }
+
+/* ---------- 窄屏适配 ---------- */
+@media (max-width: 380px) {
+  .hero-count { font-size: 36px; }
+  .point-name { font-size: 16px; }
+  .point-time { font-size: 18px; }
+  .btn-row { flex-direction: column; }
+}
+
+/* ============================================================
+   重构 · 提问向导 + 方案页（把 14 屏长滚动拆成「先问 → 后答」）
+   ============================================================ */
+
+/* ---------- 视图容器 ---------- */
+#view-ask, #view-plan { display: block; }
+/* 关键：hidden 属性的 UA 样式（display:none）会被上面这条 author 规则盖掉，
+   导致两个视图在视觉上叠加 —— hidden 属性是真的、页面却是双份的。
+   必须显式声明 hidden 态的 display，且端到端断言要查 computed display 而非属性。 */
+#view-ask[hidden], #view-plan[hidden] { display: none !important; }
+
+/* ---------- 进度条 ---------- */
+.ask-progress { margin: 18px 0 14px; }
+.ask-steps {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 4px; margin-bottom: 9px;
+}
+.ask-step {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-3); font-weight: 600;
+  flex: 1; min-width: 0;
+}
+.ask-step .dot {
+  flex: none; width: 22px; height: 22px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface); color: var(--text-3);
+  border: 1.5px solid var(--border); font-size: 11.5px; font-weight: 700;
+}
+.ask-step .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ask-step.on { color: var(--ink); }
+.ask-step.on .dot { background: var(--ink); border-color: var(--ink); color: #fff; }
+.ask-step.done .dot { background: var(--safe); border-color: var(--safe); color: #fff; }
+.ask-step.done { color: var(--safe); }
+.ask-bar { height: 4px; border-radius: 99px; background: var(--surface-2); overflow: hidden; }
+.ask-bar > i {
+  display: block; height: 100%; width: 0; background: var(--ink);
+  border-radius: 99px; transition: width .25s ease;
+}
+
+/* ---------- 提问面板 ---------- */
+.ask-q {
+  font-family: var(--serif);
+  font-size: 22px; font-weight: 700; line-height: 1.4;
+  margin: 0 0 8px;
+}
+.ask-hint {
+  font-size: 13px; color: var(--text-3); line-height: 1.7; margin: 0 0 16px;
+}
+.ask-opts { display: flex; flex-direction: column; gap: 9px; }
+.ask-opt {
+  display: flex; align-items: flex-start; gap: 11px;
+  width: 100%; text-align: left; cursor: pointer;
+  padding: 13px 14px; min-height: 54px;
+  background: var(--surface); color: var(--text);
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  transition: border-color .15s, background .15s;
+}
+.ask-opt:hover { border-color: var(--ink-border); background: var(--surface); }
+.ask-opt.on {
+  border-color: var(--ink); background: var(--ink-bg);
+  box-shadow: 0 0 0 1px var(--ink) inset;
+}
+.ask-opt .ico { flex: none; font-size: 19px; line-height: 1.25; }
+.ask-opt .body { flex: 1; min-width: 0; }
+.ask-opt .body b { display: block; font-size: 15px; font-weight: 700; }
+.ask-opt .body span { display: block; font-size: 12px; color: var(--text-3); font-weight: 500; margin-top: 3px; line-height: 1.5; }
+.ask-opt.on .body span { color: var(--ink-deep); }
+
+/* 日期月历（向导内）：连续 3 个月。纸底格子 + 底部潮势小条，
+   只有大潮日（L4·L5）渲染成汤色实心——强潮日自己跳出来，其余保持安静。 */
+/* 月份切换 Tab */
+.ask-cal-tabs { display: flex; gap: 8px; margin-bottom: 13px; flex-wrap: wrap; }
+.ask-cal-tab {
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text-2);
+  border-radius: 99px; padding: 7px 14px; min-height: 36px;
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.ask-cal-tab:hover { border-color: var(--ink-border); }
+.ask-cal-tab.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+.ask-cal-month { margin-bottom: 4px; }
+.ask-cal-month h4 {
+  font-family: var(--serif);
+  font-size: 14px; color: var(--text); font-weight: 700; margin: 0 0 8px;
+}
+.ask-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.ask-cal-wd { text-align: center; font-size: 11px; color: var(--text-3); padding-bottom: 3px; }
+.ask-cal-pad { min-height: 46px; }
+.ask-date {
+  position: relative;
+  cursor: pointer; font-family: inherit;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 3px;
+  min-height: 46px; padding: 4px 2px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--border); border-radius: 8px;
+  transition: transform .1s, box-shadow .12s;
+}
+.ask-date:active { transform: scale(.94); }
+.ask-date b { font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; }
+/* 潮势小条：所有日子都有，弱潮浅、强潮浓 */
+.ask-date::after {
+  content: ""; width: 16px; height: 4px; border-radius: 2px;
+  background: var(--lv, var(--lv1));
+}
+.ask-date[data-lv="3"] { background: color-mix(in srgb, var(--lv3) 16%, var(--surface)); }
+.ask-date[data-lv="4"] {
+  background: var(--lv4); color: #fff; border-color: transparent; font-weight: 700;
+}
+.ask-date[data-lv="4"]::after { background: rgba(255,255,255,.85); }
+.ask-date[data-lv="5"] {
+  background: var(--lv5); color: #fff; border-color: transparent; font-weight: 700;
+}
+.ask-date[data-lv="5"]::after { background: rgba(255,255,255,.85); }
+/* 过去的日子：置灰、不可点、不带潮势 */
+.ask-date:disabled {
+  background: transparent; border-color: transparent;
+  color: var(--text-3); opacity: .45; cursor: default;
+}
+.ask-date:disabled::after { display: none; }
+.ask-date:disabled:active { transform: none; }
+/* ★ 大潮日：右上角小星 */
+.ask-date i {
+  position: absolute; top: 1px; right: 3px;
+  font-style: normal; font-size: 8.5px; line-height: 1;
+  color: var(--lv5); opacity: .9;
+}
+.ask-date[data-lv="4"] i, .ask-date[data-lv="5"] i { color: rgba(255,255,255,.9); }
+/* 今天：黛青描边；选中：黛青双环 */
+.ask-date.today { border-color: var(--ink); }
+.ask-date.on { box-shadow: 0 0 0 1.5px var(--ink) inset; }
+.ask-cal-legend {
+  margin-top: 12px; padding-top: 11px; border-top: 1px dashed var(--line);
+  font-size: 12.5px; color: var(--text-3); line-height: 1.7;
+}
+.ask-cal-legend b { color: var(--text-2); }
+
+/* 出发地下拉（向导内） */
+.ask-select-wrap { margin-top: 4px; }
+.ask-select {
+  width: 100%; min-height: 52px; padding: 12px 13px;
+  font-family: inherit; font-size: 15.5px; font-weight: 600; color: var(--text);
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.ask-select:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+/* 安全确认（向导第 1 步） */
+.ask-safety-list {
+  margin: 4px 0 6px; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.ask-safety-list li {
+  display: flex; gap: 9px; align-items: flex-start;
+  font-size: 13.5px; line-height: 1.6; color: var(--text);
+}
+.ask-safety-list li::before { flex: none; font-weight: 800; }
+.ask-safety-list.ok li::before { content: "✓"; color: var(--safe); }
+.ask-safety-list.no li::before { content: "✕"; color: var(--danger); }
+.ask-do-h {
+  font-size: 12.5px; font-weight: 700; letter-spacing: 2px; margin: 14px 0 8px;
+}
+.ask-do-h.ok { color: var(--safe-text); }
+.ask-do-h.no { color: var(--danger-text); }
+.ask-speed {
+  background: var(--warn-bg); border: 1px solid var(--warn-border);
+  border-radius: var(--radius-sm); padding: 11px 13px;
+  font-size: 13.5px; line-height: 1.7; color: var(--warn-text); margin-bottom: 6px;
+}
+.ask-speed b { color: var(--warn); }
+
+/* ---------- 向导底部 ---------- */
+.ask-foot {
+  display: flex; gap: 10px; align-items: center;
+  margin: 16px 0 8px; flex-wrap: wrap;
+}
+.ask-foot .spacer { flex: 1; }
+
+/* ---------- 方案页 · 答案条 ---------- */
+.answers-bar {
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  margin: 16px 0 14px;
+}
+.answer-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 99px; padding: 7px 12px;
+  font-family: inherit; font-size: 12.5px; font-weight: 700; color: var(--text);
+  cursor: pointer;
+  /* 移动端点击目标 ≥44px：这条回改按钮在方案页顶部，是最高频的二次操作入口，
+     36px 属于"看得到但不好点"的区间。用负外边距吸收多余高度，视觉高度不变。 */
+  min-height: 44px; margin: -4px 0;
+}
+.answer-pill:hover { border-color: var(--ink-border); background: var(--ink-bg); }
+.answer-pill .k { color: var(--text-3); font-weight: 600; }
+.answer-pill .edit { color: var(--ink); font-weight: 800; }
+/* 「重新回答」弱化：在答案条里可见但不抢戏 */
+.answer-pill-reset { border-style: dashed; color: var(--text-2); font-weight: 600; }
+.answer-pill-reset:hover { background: var(--surface-2); border-color: var(--line-strong); }
+
+/* ---------- 方案页 · 主方案卡（全站视觉重心） ---------- */
+.plan-card {
+  background: var(--surface); border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-top: 4px solid var(--ink);
+  box-shadow: var(--shadow-lg); padding: 20px 18px; margin: 12px 0;
+}
+.plan-kicker {
+  font-size: 12px; font-weight: 700; letter-spacing: 3px;
+  color: var(--ink); margin-bottom: 10px;
+}
+.plan-when {
+  font-size: 13px; color: var(--text-3); font-weight: 600; margin-bottom: 6px;
+}
+.plan-where {
+  font-family: var(--serif);
+  font-size: 25px; font-weight: 700; line-height: 1.3; margin: 0 0 6px;
+}
+.plan-why {
+  font-size: 13.5px; color: var(--text-2); line-height: 1.75; margin: 0 0 15px;
+}
+.plan-count {
+  border-radius: var(--radius-sm); padding: 15px 14px;
+  background: var(--surface-2); text-align: center; margin-bottom: 13px;
+}
+.plan-count .big {
+  font-size: 34px; font-weight: 800; line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.plan-count .cap { font-size: 12.5px; color: var(--text-3); margin-top: 4px; font-weight: 600; }
+
+.plan-times {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); overflow: hidden; margin-bottom: 13px;
+}
+.plan-times > div { background: var(--surface); padding: 11px 12px; }
+.plan-times .k { font-size: 11.5px; color: var(--text-3); font-weight: 700; margin-bottom: 4px; }
+.plan-times .v { font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.plan-times .n { font-size: 11px; color: var(--text-3); margin-top: 3px; line-height: 1.45; }
+.plan-times .span2 { grid-column: 1 / -1; }
+
+.plan-cta { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+
+/* 次优 / 其他选择 */
+.plan-alt-head {
+  font-family: var(--serif);
+  font-size: 14px; font-weight: 700; color: var(--text-2);
+  margin: 20px 0 9px; padding-left: 2px;
+}
+.alt-item {
+  display: flex; align-items: center; gap: 11px;
+  background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 13px; margin-bottom: 8px;
+  cursor: pointer; text-align: left; width: 100%;
+  font-family: inherit; color: var(--text);
+  transition: border-color .15s, background .15s;
+}
+.alt-item:hover { border-color: var(--ink-border); background: var(--ink-bg); }
+.alt-item .body { flex: 1; min-width: 0; }
+.alt-item .body b { display: block; font-size: 14.5px; font-weight: 700; }
+.alt-item .body span { display: block; font-size: 12px; color: var(--text-3); margin-top: 3px; line-height: 1.5; }
+.alt-item .go { flex: none; font-size: 12px; font-weight: 800; color: var(--ink); }
+
+/* ---------- 参考资料折叠区（弱化收边，退为附属信息） ---------- */
+.refs-head { margin: 28px 0 10px; padding-left: 2px; }
+.refs-title { font-family: var(--serif); font-size: 18px; font-weight: 700; margin: 0 0 5px; }
+
+details.ref {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); margin-bottom: 9px; overflow: hidden;
+}
+details.ref > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px 15px; min-height: 52px;
+  font-size: 15px; font-weight: 700;
+}
+details.ref > summary::-webkit-details-marker { display: none; }
+details.ref > summary::after {
+  content: "＋"; margin-left: auto; flex: none;
+  font-size: 15px; font-weight: 700; color: var(--text-3);
+}
+details.ref[open] > summary::after { content: "－"; }
+details.ref[open] > summary { border-bottom: 1px solid var(--border); }
+.ref-meta { margin-left: auto; font-size: 11.5px; font-weight: 600; color: var(--text-3); }
+details.ref[open] > summary .ref-meta { margin-left: 0; }
+.ref-body { padding: 14px 14px 4px; }
+/* 折叠区内的卡片去掉外边距，避免双重留白 */
+.ref-body > .card:first-child { margin-top: 0; }
+.ref-body .card { box-shadow: none; }
+.ref-body .card-title { margin-top: 16px; }
+
+/* ---------- 重来 ---------- */
+.restart-row { margin: 22px 0 6px; text-align: center; }
+
+/* ---------- 移动端微调 ---------- */
+@media (max-width: 380px) {
+  .plan-where { font-size: 21px; }
+  .plan-count .big { font-size: 29px; }
+  .ask-steps .lbl { display: none; }
+  .ask-step { flex: 0 0 auto; }
+}
