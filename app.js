@@ -268,11 +268,7 @@
       if (!target) return;
 
       let ms, label;
-      if (c.phase === 'planned' || c.phase === 'depart') {
-        ms = c.msToDepart; label = '距离出发';
-      } else {
-        ms = c.msToTide; label = '距离潮到';
-      }
+      ms = c.msToTide; label = '距离潮到';
 
       /* 阶段翻转时的重绘必须**异步**（setTimeout 0）。
          曾在这里同步调 renderPlanMain() → 它又会 startHeroTick → paint →
@@ -396,7 +392,6 @@
   function pointCardHtml(p, dateStr) {
     const rec = TideData.getTide(dateStr, p.id);
     const isWild = p.type === 'wild';
-    const c = rec ? CountdownEngine.compute(dateStr, p.id, { driveMinutes: driveMinutesOf(p.id) }) : null;
 
     const timeText = rec
       ? [(rec.morning && rec.morning !== '—' && rec.morning !== '...' ? `早 ${rec.morning}` : ''),
@@ -466,13 +461,13 @@
         <div class="point-tags">${tags.join('')}</div>
         <div class="point-body">
           <div class="kv"><span class="k">今日潮时</span><span class="v mono"><b>${timeText}</b>${!staleNow && level ? ` · ${stars(level)}` : ''}</span></div>
-          ${c && c.phase !== 'nodata' && c.phase !== 'passed' ? `<div class="kv"><span class="k">建议出发</span><span class="v mono">${CountdownEngine.hhmm(c.departAt)}（车程约 ${c.driveMinutes} 分${driveSourceTag(p.id)} + 提前 ${c.leadMinutes} 分候潮）</span></div>` : ''}
+          ${!staleNow && rec && rec.height ? `<div class="kv"><span class="k">涌高</span><span class="v mono">约 ${esc(rec.height)}</span></div>` : ''}
         </div>
         ${l3}
         ${wildFoot}
         <div class="point-actions">
           <button class="btn ${selected ? 'btn-primary' : 'btn-outline'}" data-pick="${p.id}">
-            ${selected ? '✓ 已选中' : '选它，算出发时间'}
+            ${selected ? '✓ 已选中' : '选它作为我的点位'}
           </button>
           <button class="btn btn-ghost" data-viewmap="${p.id}">复制导航词</button>
         </div>
@@ -1329,6 +1324,26 @@
     };
   }
 
+  /** 方案页快速换日（‹ ›）：只换日期，不动其他答案 */
+  function shiftDate(delta) {
+    if (!state.date) return;
+    const d = new Date(state.date + 'T00:00:00');
+    d.setDate(d.getDate() + delta);
+    const key = CountdownEngine.toDateKey(d);
+    if (key < todayKey()) { toast('过去的日子就不看了'); return; }
+    state.date = key; chosen.date = true;
+    state.customTideAM = ''; state.customTidePM = '';
+    saveState();
+    renderAll();
+  }
+
+  /** 点位实拍图：有照片用照片，没有先放占位（水墨底 + 点位名） */
+  function photoHtml(p, cls) {
+    return `<div class="${cls}">${p.photo
+      ? `<img src="${esc(p.photo)}" alt="${esc(p.name)}" loading="lazy">`
+      : `<span>${esc(p.short || p.name)} · 实拍图待补</span>`}</div>`;
+  }
+
   /** 某一步是否已答 */
   function isAnswered(step) {
     const q = QUESTIONS[step];
@@ -1454,11 +1469,10 @@
                 ${['日', '一', '二', '三', '四', '五', '六'].map(w => `<span class="ask-cal-wd">${w}</span>`).join('')}
                 ${'<span class="ask-cal-pad"></span>'.repeat(am.pad)}
                 ${am.days.map(day => day.past
-                  ? `<button type="button" class="ask-date" disabled><b>${day.d}</b></button>`
+                  ? `<button type="button" class="ask-date" disabled><span class="dn"><b>${day.d}</b></span></button>`
                   : `<button type="button" data-date="${day.key}" data-lv="${day.lv}" aria-pressed="${day.key === state.date}"
-                      class="ask-date ${day.key === state.date ? 'on' : ''} ${day.today ? 'today' : ''}"
-                      style="--lv:${TideData.levelColor(day.lv)}">
-                      <b>${day.d}</b>${day.peak ? '<i>★</i>' : ''}
+                      class="ask-date ${day.key === state.date ? 'on' : ''} ${day.today ? 'today' : ''}">
+                      <span class="dn"><b>${day.d}</b>${day.peak ? '<i>★</i>' : ''}</span>
                     </button>`).join('')}
               </div>
             </div>
@@ -1467,9 +1481,16 @@
             内置潮汐表已过期，<b>大潮日的具体潮时已隐去</b>；日历等级按天文规律推算，仍然可用。
             到方案页后请用「官方入口」查当日权威潮时。</div>` : ''}
           <div class="ask-cal-legend">
-            颜色是潮势，按天文规律推算：<b>越接近浓汤色潮越大</b>（钱塘江水含沙，大潮本就是浑黄的）。
-            ★ 是大潮日（农历初三、十八前后最盛），大潮日给出具体潮时；
-            小潮日只有等级，大概率只看到一条白线。出发前以当日官方预报为准。
+            <div class="lg-bar">
+              <div class="lg-cells">
+                <span style="background:var(--lv1)"></span><span style="background:var(--lv2)"></span><span style="background:var(--lv3)"></span><span style="background:var(--lv4)"></span><span style="background:var(--lv5)"></span>
+              </div>
+              <div class="lg-zones"><span>小潮日</span><span class="z2">大潮日 ★</span></div>
+            </div>
+            <p>潮势根据天文规律推算，用颜色表示：<b>颜色越深则潮越大</b>，★ 为大潮日（农历初三、十八前后最盛）</p>
+            <p><b>大潮日</b>：一定来潮，时间大概准，误差几十分钟</p>
+            <p><b>小潮日</b>：不一定来潮，时间很不准，可能白跑一趟，看到一条"白线"</p>
+            <p>不管哪天，出发前查当日官方预报，那才是"今天到底几点几分来"。</p>
           </div>
         </div>`;
 
@@ -1782,8 +1803,11 @@
         const near = TideData.allDates.find(d2 => d2 >= dateStr);
         const nearDay = near ? TideData.TIDE_TABLE[near] : null;
         const lv = TideData.approxLevel(dateStr);
+        const sd = new Date(dateStr + 'T00:00:00');
+        const sweek = '日一二三四五六'[sd.getDay()];
         box.innerHTML = `<div class="plan-card">
           <div class="plan-kicker">你的方案</div>
+          <div class="plan-when"><button class="day-nav" id="dayPrev" aria-label="前一天">‹</button><span>${sd.getMonth() + 1} 月 ${sd.getDate()} 日 · 周${sweek}</span><button class="day-nav" id="dayNext" aria-label="后一天">›</button></div>
           <h2 class="plan-where">这天是小潮</h2>
           <p class="plan-why">按天文规律推算，这天潮势${lv <= 2 ? '较弱' : '一般'}，
             大概率只能看到一条白线，看不到成型的潮头，本站不为此给出具体潮时。
@@ -1795,6 +1819,8 @@
         </div>`;
         const gp = $('#gotoPeak');
         if (gp && near) gp.addEventListener('click', () => { setDate(near); });
+        const dp0 = $('#dayPrev'); if (dp0) dp0.addEventListener('click', () => shiftDate(-1));
+        const dn0 = $('#dayNext'); if (dn0) dn0.addEventListener('click', () => shiftDate(1));
       }
       const b = $('#planBackAsk'); if (b) b.addEventListener('click', () => editAnswer('date'));
       return;
@@ -1808,7 +1834,6 @@
 
     const d = new Date(dateStr + 'T00:00:00');
     const week = '日一二三四五六'[d.getDay()];
-    const dd = driveFor(point.id);
 
     /* ---- 潮时区：过期时不给数字 ---- */
     let timesHtml;
@@ -1827,34 +1852,28 @@
           ].filter(Boolean).join(' · ') || '当天无潮时数据'
         : '当天无潮时数据';
 
-      const departOk = c.phase !== 'nodata' && c.phase !== 'passed';
       timesHtml = `<div class="plan-times">
         <div class="span2">
           <div class="k">潮时</div>
           <div class="v">${esc(tideTxt)}</div>
-          ${rec && rec.level ? `<div class="n">潮势 ${TideData.levelText(rec.level)}（${stars(rec.level)}）${rec.overridden ? ' · 已按你的校正' : ''}</div>` : ''}
+          ${rec && rec.level ? `<div class="n">潮势 ${TideData.levelText(rec.level)}（${stars(rec.level)} · ${TideData.levelAdvice(rec.level)}）${rec.height ? ` · 涌高约 ${esc(rec.height)}` : ''}${rec.overridden ? ' · 已按你的校正' : ''}</div>` : ''}
+          <div class="n">潮型：${point.tideTypes.map(esc).join(' · ')}</div>
         </div>
-        <div>
-          <div class="k">建议出发</div>
-          <div class="v">${departOk ? CountdownEngine.hhmm(c.departAt) : '—'}</div>
-          <div class="n">${departOk ? departDateNote(c.departAt) : '当天潮已过或无数据'}</div>
-        </div>
-        <div>
-          <div class="k">车程</div>
-          <div class="v">约 ${dd.minutes} 分</div>
-          <div class="n">${dd.source === 'amap' ? '高德实时路况' : (dd.source === 'user' ? '你手动填写' : '按直线距离估算')}
-            ${state.driveMinutes != null
-              ? `<button class="link-btn" id="driveReset">改回自动估算</button>`
-              : `<button class="link-btn" id="driveEdit">不准？手动改</button>`}</div>
+        <div class="span2">
+          <div class="k">怎么去</div>
+          ${[
+            point.transport.rail ? { ico: '🚄', t: '铁路 / 城际', d: point.transport.rail } : null,
+            { ico: '🚗', t: '自驾 / 打车', d: point.transport.nav + (point.transport.parking ? '；' + point.transport.parking : '') },
+            point.transport.extra ? { ico: '🧭', t: '补充', d: point.transport.extra } : null
+          ].filter(Boolean).map(r => `<div class="route-line"><span class="ri">${r.ico}</span><b>${r.t}</b>${esc(r.d)}</div>`).join('')}
         </div>
       </div>`;
     }
 
-    /* ---- 倒计时 ---- */
+    /* ---- 倒计时：统一倒数到潮到（出发时间已按用户决策从方案卡撤下） ---- */
     let countHtml = '';
     if (!staleNow && c.phase !== 'nodata') {
-      const ms = (c.phase === 'planned' || c.phase === 'depart') ? c.msToDepart : c.msToTide;
-      const lbl = (c.phase === 'planned' || c.phase === 'depart') ? '距离出发' : '距离潮到';
+      const lbl = '距离潮到';
       const ui = CountdownEngine.PHASE_UI[c.phase] || CountdownEngine.PHASE_UI.nodata;
       const capTxt = lbl === ui.title ? lbl : `${lbl} · ${ui.title}`;
       countHtml = `<div class="plan-count">
@@ -1877,7 +1896,8 @@
     box.innerHTML = `
       <div class="plan-card" style="${staleNow ? 'border-top-color:var(--warn)' : ''}">
         <div class="plan-kicker">${staleNow ? '你的方案（数据已过期）' : '你的方案'}</div>
-        <div class="plan-when">${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${week} · ${esc(day.lunisolar)}${day.peak ? ' · 峰值日' : ''}</div>
+        <div class="plan-when"><button class="day-nav" id="dayPrev" aria-label="前一天">‹</button><span>${d.getMonth() + 1} 月 ${d.getDate()} 日 · 周${week} · ${esc(day.lunisolar)}${day.peak ? ' · 峰值日' : ''}</span><button class="day-nav" id="dayNext" aria-label="后一天">›</button></div>
+        ${photoHtml(point, 'plan-photo')}
         <h2 class="plan-where">去 ${esc(point.name)}</h2>
         <p class="plan-why">${reasons.filter(Boolean).map(esc).join(' ')}</p>
         ${countHtml}
@@ -1893,30 +1913,9 @@
     /* 倒计时 tick */
     if (countHtml) startHeroTick();
 
-    /* 手动车程覆盖（P0-01 保留功能）：估算不准时用户可改 */
-    const driveEditBtn = $('#driveEdit');
-    if (driveEditBtn) {
-      driveEditBtn.addEventListener('click', () => {
-        const val = window.prompt('从出发地到这里开车大约要多久？（分钟）', String(dd.minutes));
-        if (val == null) return;
-        const n = parseInt(val, 10);
-        if (!Number.isFinite(n) || n <= 0 || n > 600) { toast('请输入 1–600 之间的分钟数'); return; }
-        state.driveMinutes = n;
-        saveState();
-        renderAll();
-        toast('已按 ' + n + ' 分钟车程重算出发时间');
-      });
-    }
-    const driveResetBtn = $('#driveReset');
-    if (driveResetBtn) {
-      driveResetBtn.addEventListener('click', () => {
-        state.driveMinutes = null;
-        saveState();
-        renderAll();
-        if (state.pointId) upgradeDrive(state.pointId);
-        toast('已改回自动估算');
-      });
-    }
+    /* 前一天 / 后一天 */
+    const dp = $('#dayPrev'); if (dp) dp.addEventListener('click', () => shiftDate(-1));
+    const dn2 = $('#dayNext'); if (dn2) dn2.addEventListener('click', () => shiftDate(1));
 
     $('#planNav').addEventListener('click', () => {
       copyText(point.transport.nav, '导航关键词已复制');

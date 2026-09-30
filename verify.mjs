@@ -94,10 +94,9 @@ check('参考资料默认全部折叠', refsClosed === refsTotal && refsTotal >=
 console.log('\n=== E. 方案页核心数字 ===');
 const timesTxt = await page.evaluate(() => (document.querySelector('.plan-times') || {}).innerText || '');
 check('给出潮时', /\d{1,2}:\d{2}/.test(timesTxt), timesTxt.slice(0, 60));
-check('给出建议出发时间', /建议出发/.test(timesTxt), timesTxt.slice(0, 60));
-check('给出车程', /车程/.test(timesTxt), timesTxt.slice(0, 60));
-const srcNote = await page.evaluate(() => (document.querySelector('.plan-times') || {}).innerText || '');
-check('车程标注来源（估算/实时/手填之一）', /估算|实时|手动填写/.test(srcNote), srcNote.slice(-40));
+check('给出涌高', /涌高/.test(timesTxt), timesTxt.slice(0, 80));
+check('给出潮型', /潮型/.test(timesTxt), timesTxt.slice(0, 80));
+check('给出去向路线（怎么去）', /怎么去/.test(timesTxt) && /铁路|自驾/.test(timesTxt), timesTxt.slice(0, 80));
 
 console.log('\n=== F. 倒计时 tick ===');
 const t1 = await page.evaluate(() => { const e = document.getElementById('heroCount'); return e ? e.textContent.trim() : null; });
@@ -157,21 +156,16 @@ await page.waitForTimeout(400);
 const l4Closed = await page.evaluate(() => document.getElementById('wildOverlay').hidden);
 check('勾选后 L4 放行', l4Closed === true);
 
-console.log('\n=== J. 手动车程覆盖（P0-01 保留功能）===');
-const driveBefore = await page.evaluate(() => (document.querySelector('.plan-times') || {}).innerText || '');
-await page.evaluate(() => {
-  window.prompt = () => '300';   // 杭州市中心→盐官 ≈ 67min，改 300 必然可见变化
-  const b = document.getElementById('driveEdit');
-  if (b) b.click();
-});
-await page.waitForTimeout(600);
-const driveAfter = await page.evaluate(() => (document.querySelector('.plan-times') || {}).innerText || '');
-check('手填车程后数字变化', driveBefore !== driveAfter, `${driveBefore.match(/约 \d+ 分/)} → ${driveAfter.match(/约 \d+ 分/)}`);
-check('手填后标注「你手动填写」', /手动填写/.test(driveAfter), driveAfter.slice(-40));
-await page.evaluate(() => { const b = document.getElementById('driveReset'); if (b) b.click(); });
-await page.waitForTimeout(600);
-const driveReset = await page.evaluate(() => (document.querySelector('.plan-times') || {}).innerText || '');
-check('改回自动估算后恢复', !/手动填写/.test(driveReset), driveReset.slice(-40));
+console.log('\n=== J. 方案页 前一天/后一天 ===');
+const dBefore = await page.evaluate(() => (document.querySelector('.plan-when span') || {}).textContent || '');
+await page.evaluate(() => document.getElementById('dayNext').click());
+await page.waitForTimeout(500);
+const dAfter = await page.evaluate(() => (document.querySelector('.plan-when span') || {}).textContent || '');
+check('「后一天」切换日期', dBefore !== dAfter, `${dBefore} → ${dAfter}`);
+await page.evaluate(() => document.getElementById('dayPrev').click());
+await page.waitForTimeout(500);
+const dBack = await page.evaluate(() => (document.querySelector('.plan-when span') || {}).textContent || '');
+check('「前一天」切回原日期', dBack === dBefore, `${dBack} vs ${dBefore}`);
 
 console.log('\n=== K. 清单持久化 + 刷新恢复 ===');
 const cbClicked = await page.evaluate(() => {
